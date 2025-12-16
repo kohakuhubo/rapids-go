@@ -1,0 +1,78 @@
+# 应用配置文件示例
+# 该文件展示了如何配置不同的数据源
+
+# 数据源类型：kafka 或 nats
+dataSource: kafka
+
+# Kafka配置
+kafka:
+  # Kafka集群地址列表
+  brokers:
+    - "localhost:9092"
+  # 主题名称
+  topic: "berry-rapids-topic"
+  # 消费者组名称
+  consumerGroup: "berry-rapids-consumer-group"
+  # 批处理大小
+  batchSize: 1000
+  # 轮询超时时间
+  pollTimeout: "100ms"
+
+# NATS JetStream配置
+nats:
+  # NATS服务器地址
+  url: "nats://localhost:4222"
+  # 主题名称
+  subject: "berry-rapids-subject"
+  # 流名称
+  stream: "berry-rapids-stream"
+
+# ClickHouse配置
+clickhouse:
+  # 主机地址
+  host: "localhost"
+  # 端口号
+  port: 9000
+  # 数据库名称
+  database: "berry_rapids"
+  # 用户名
+  username: "default"
+  # 密码
+  password: ""
+  # 连接超时时间
+  dialTimeout: "10s"
+  # 是否启用压缩
+  compress: true
+
+# 聚合处理配置
+aggregate:
+  # 等待时间
+  waitTime: "100ms"
+  # 处理线程数
+  threadSize: 8
+  # 等待队列长度
+  waitQueue: 64
+  # 插入队列长度
+  insertQueue: 64
+
+# 块配置
+block:
+  # 批处理最大行数
+  batchDataMaxRowCnt: 10000
+  # 批处理最大字节数（10MB）
+  batchDataMaxByteSize: 10485760
+  # 固定缓存大小
+  byteBufferFixedCacheSize: 100
+  # 动态缓存大小
+  byteBufferDynamicCacheSize: 50
+  # 块大小
+  blockSize: 8192
+
+# 系统配置
+system:
+  # 解析线程数
+  parseThreadSize: 4
+  # 数据插入线程数
+  dataInsertThreadSize: 4
+  # 数据插入队列长度
+  dataInsertQueueLength: 100

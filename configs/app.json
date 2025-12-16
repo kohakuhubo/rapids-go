@@ -1,0 +1,66 @@
+{
+  "plugins": {
+    "sources": [
+      {
+        "id": "kafka-source-1",
+        "type": "kafka",
+        "config": {
+          "brokers": ["localhost:9092"],
+          "topic": "berry-rapids-topic"
+        }
+      },
+      {
+        "id": "nats-source-1",
+        "type": "nats",
+        "config": {
+          "url": "nats://localhost:4222",
+          "subject": "berry-rapids-subject",
+          "stream": "berry-rapids-stream"
+        }
+      }
+    ],
+    "processors": [
+      {
+        "id": "sample-processor-1",
+        "type": "sample",
+        "source_id": "kafka-source-1",
+        "target_processor_ids": ["filter-processor-1"],
+        "config": {}
+      },
+      {
+        "id": "filter-processor-1",
+        "type": "filter",
+        "source_id": "kafka-source-1",
+        "target_processor_ids": [],
+        "config": {
+          "filterKeyword": "important"
+        }
+      },
+      {
+        "id": "counter-processor-1",
+        "type": "counter",
+        "source_id": "nats-source-1",
+        "target_processor_ids": [],
+        "config": {}
+      }
+    ]
+  },
+  "clickhouse": {
+    "host": "localhost",
+    "port": 9000,
+    "database": "berry",
+    "username": "default",
+    "password": "honey",
+    "dialTimeout": "10s",
+    "compress": true
+  },
+  "system": {
+    "parseThreadSize": 4,
+    "dataInsertThreadSize": 4,
+    "dataInsertQueueLength": 100,
+    "pluginChannelBufferSize": 1024,
+    "workersPerProcessor": 2,
+    "persistenceQueueSize": 1000,
+    "persistenceWorkers": 4
+  }
+}

@@ -1,0 +1,104 @@
+# 应用配置文件示例（插件化版本）
+# 该文件展示了如何配置插件化的数据源和处理器
+
+# 插件配置
+plugins:
+  # 数据源插件配置
+  sources:
+    # Kafka数据源插件
+    - id: "kafka-source-1"
+      type: "kafka"
+      config:
+        brokers:
+          - "localhost:9092"
+        topic: "berry-rapids-topic"
+      
+    # NATS数据源插件
+    - id: "nats-source-1"
+      type: "nats"
+      config:
+        url: "nats://localhost:4222"
+        subject: "berry-rapids-subject"
+        stream: "berry-rapids-stream"
+  
+  # 处理器插件配置
+  processors:
+    # 示例处理器插件
+    - id: "sample-processor-1"
+      type: "sample"
+      source_id: "kafka-source-1"  # 从指定数据源接收数据
+      config:
+        some_parameter: "value1"
+        
+    # 链式处理器插件
+    - id: "chain-processor-1"
+      type: "sample"
+      previous_processor_id: "sample-processor-1"  # 从上一个处理器接收数据
+      target_processor_ids:
+        - "persistence-processor-1"  # 将处理结果发送到下一个处理器
+      config:
+        some_parameter: "value2"
+        
+    # 持久化处理器插件
+    - id: "persistence-processor-1"
+      type: "persistence"
+      config:
+        table_name: "processed_data"
+
+# ClickHouse配置
+clickhouse:
+  # 主机地址
+  host: "localhost"
+  # 端口号
+  port: 9000
+  # 数据库名称
+  database: "berry_rapids"
+  # 用户名
+  username: "default"
+  # 密码
+  password: ""
+  # 连接超时时间
+  dialTimeout: "10s"
+  # 是否启用压缩
+  compress: true
+
+# 聚合处理配置
+aggregate:
+  # 等待时间
+  waitTime: "100ms"
+  # 处理线程数
+  threadSize: 8
+  # 等待队列长度
+  waitQueue: 64
+  # 插入队列长度
+  insertQueue: 64
+
+# 块配置
+block:
+  # 批处理最大行数
+  batchDataMaxRowCnt: 10000
+  # 批处理最大字节数（10MB）
+  batchDataMaxByteSize: 10485760
+  # 固定缓存大小
+  byteBufferFixedCacheSize: 100
+  # 动态缓存大小
+  byteBufferDynamicCacheSize: 50
+  # 块大小
+  blockSize: 8192
+
+# 系统配置
+system:
+  # 解析线程数
+  parseThreadSize: 4
+  # 数据插入线程数
+  dataInsertThreadSize: 4
+  # 数据插入队列长度
+  dataInsertQueueLength: 100
+  # 插件通道缓冲区大小
+  pluginChannelBufferSize: 1000
+  # 每个处理器的工作线程数
+  workersPerProcessor: 2
+  # 持久化队列大小
+  persistenceQueueSize: 1000
+  # 持久化工作线程数
+  persistenceWorkers: 4

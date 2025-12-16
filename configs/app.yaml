@@ -1,0 +1,37 @@
+# Berry Rapids Go Configuration
+version: "1.0"
+
+kafka:
+  brokers:
+    - "localhost:9092"
+  topic: "berry-rapids-topic"
+  consumerGroup: "berry-rapids-consumer-group"
+  batchSize: 1000
+  pollTimeout: 100ms
+
+clickhouse:
+  host: "localhost"
+  port: 9000
+  database: "berry"
+  username: "default"
+  password: "honey"
+  dialTimeout: 10s
+  compress: true
+
+aggregate:
+  waitTime: 100ms
+  threadSize: 8
+  waitQueue: 64
+  insertQueue: 64
+
+block:
+  batchDataMaxRowCnt: 10000
+  batchDataMaxByteSize: 10485760  # 10MB
+  byteBufferFixedCacheSize: 100
+  byteBufferDynamicCacheSize: 50
+  blockSize: 8192
+
+system:
+  parseThreadSize: 4
+  dataInsertThreadSize: 4
+  dataInsertQueueLength: 100

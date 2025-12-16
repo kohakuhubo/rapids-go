@@ -1,0 +1,49 @@
+berry-rapids-go/
+├── README.md
+├── go.mod
+├── go.sum
+├── main.go
+├── configs/
+│   └── app.yaml
+├── cmd/
+│   └── server/
+│       └── main.go
+├── internal/
+│   ├── app/
+│   │   └── server.go
+│   ├── aggregate/
+│   │   ├── aggregate_server.go
+│   │   ├── block_data_event.go
+│   │   ├── calculation/
+│   │   │   └── handler.go
+│   │   ├── consistency/
+│   │   │   ├── default_persistence_handler.go
+│   │   │   └── persistence_handler.go
+│   │   └── state/
+│   │       └── aggregate_state.go
+│   ├── clickhouse/
+│   │   └── client/
+│   │       ├── client.go
+│   │       └── enhanced_client.go
+│   ├── configuration/
+│   │   ├── app_config.go
+│   │   └── block_config.go
+│   ├── data/
+│   │   ├── batch_processor.go
+│   │   ├── memory_manager.go
+│   │   ├── persistece/
+│   │   │   ├── persistence_handler.go
+│   │   │   └── persistence_server.go
+│   │   └── source/
+│   │       ├── source.go
+│   │       └── kafka/
+│   │           ├── consumer.go
+│   │           ├── kafka_source.go
+│   │           └── kafka_source_entry.go
+│   ├── model/
+│   │   └── batch_data.go
+│   └── util/
+└── pkg/
+    └── clickhouse/
+        ├── batch.go
+        └── buffer.go
