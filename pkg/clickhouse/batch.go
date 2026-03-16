@@ -7,7 +7,7 @@ import (
 	"github.com/ClickHouse/ch-go/proto"
 )
 
-// BatchInserter handles batch insertion of data into ClickHouse
+// BatchInserter 处理批量插入数据到 ClickHouse
 type BatchInserter struct {
 	client    *client.ClickHouseClient
 	tableName string
@@ -15,7 +15,7 @@ type BatchInserter struct {
 	buffer    *ColumnBuffer
 }
 
-// NewBatchInserter creates a new batch inserter
+// NewBatchInserter 创建一个新的批量插入器
 func NewBatchInserter(chClient *client.ClickHouseClient, tableName string, batchSize int) *BatchInserter {
 	return &BatchInserter{
 		client:    chClient,
@@ -25,18 +25,18 @@ func NewBatchInserter(chClient *client.ClickHouseClient, tableName string, batch
 	}
 }
 
-// SetColumns sets the column names for the buffer
+// SetColumns 设置缓冲区的列名
 func (bi *BatchInserter) SetColumns(columns []string) {
 	bi.buffer.SetColumns(columns)
 }
 
-// AddRow adds a row of data to the batch
+// AddRow 添加一行数据到批次中
 func (bi *BatchInserter) AddRow(values []interface{}) error {
 	if err := bi.buffer.Append(values); err != nil {
 		return err
 	}
 
-	// If buffer is full, flush it
+	// 如果缓冲区已满，则刷新
 	if bi.buffer.IsFull() {
 		return bi.Flush(context.Background())
 	}
@@ -44,13 +44,13 @@ func (bi *BatchInserter) AddRow(values []interface{}) error {
 	return nil
 }
 
-// Flush inserts all buffered data into ClickHouse
+// Flush 将所有缓冲的数据插入到 ClickHouse
 func (bi *BatchInserter) Flush(ctx context.Context) error {
 	if bi.buffer.IsEmpty() {
 		return nil
 	}
 
-	// Prepare the input block
+	// 准备输入块
 	input := make(proto.Input, len(bi.buffer.columns))
 	for i, col := range bi.buffer.columns {
 		input[i] = proto.InputColumn{
@@ -59,14 +59,14 @@ func (bi *BatchInserter) Flush(ctx context.Context) error {
 		}
 	}
 
-	// Insert the data
+	// 插入数据
 	query := fmt.Sprintf("INSERT INTO %s VALUES", bi.tableName)
 	err := bi.client.InsertBlock(ctx, query, input)
 	if err != nil {
 		return err
 	}
 
-	// Reset the buffer
+	// 重置缓冲区
 	bi.buffer.Reset()
 	return nil
 }

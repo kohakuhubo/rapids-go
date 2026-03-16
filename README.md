@@ -1,90 +1,90 @@
-# Berry Rapids Go
+，# Berry Rapids Go
 
-Berry Rapids Go is a high-performance data processing system that reads data from Kafka, processes it, and writes to ClickHouse with aggregation capabilities.
+Berry Rapids Go 是一个高性能数据处理系统，从 Kafka 读取数据，进行处理，并写入 ClickHouse，具有聚合功能。
 
-## Features
+## 功能特性
 
-- High-performance data processing pipeline
-- Multiple data source support (Kafka, NATS JetStream)
-- ClickHouse data persistence
-- Data aggregation capabilities
-- Batch processing with memory management
-- Configurable through YAML files
+- 高性能数据处理管道
+- 多数据源支持（Kafka、NATS JetStream）
+- ClickHouse 数据持久化
+- 数据聚合功能
+- 带内存管理的批处理
+- 通过 YAML 文件配置
 
-## Prerequisites
+## 前置要求
 
-- Go 1.21 or higher
-- Kafka cluster (for Kafka data source) or NATS server (for NATS JetStream data source)
-- ClickHouse database
+- Go 1.21 或更高版本
+- Kafka 集群（用于 Kafka 数据源）或 NATS 服务器（用于 NATS JetStream 数据源）
+- ClickHouse 数据库
 
-## Configuration
+## 配置
 
-The application is configured through the `configs/app.yaml` file. You can modify the following sections:
+应用程序通过 `configs/app.yaml` 文件进行配置。您可以修改以下部分：
 
-### Data Source Configuration
-- `dataSource`: Type of data source ('kafka' or 'nats')
-- `kafka`: Kafka-specific configuration
-- `nats`: NATS JetStream-specific configuration
+### 数据源配置
+- `dataSource`: 数据源类型（'kafka' 或 'nats'）
+- `kafka`: Kafka 特定配置
+- `nats`: NATS JetStream 特定配置
 
-### Kafka Configuration
-- `brokers`: List of Kafka broker addresses
-- `topic`: Kafka topic to consume from
-- `consumerGroup`: Consumer group ID
-- `batchSize`: Number of messages to fetch in each batch
-- `pollTimeout`: Timeout for Kafka poll operations
+### Kafka 配置
+- `brokers`: Kafka 代理地址列表
+- `topic`: 要消费的 Kafka 主题
+- `consumerGroup`: 消费者组 ID
+- `batchSize`: 每批获取的消息数量
+- `pollTimeout`: Kafka 轮询操作的超时时间
 
-### NATS JetStream Configuration
-- `url`: NATS server URL
-- `subject`: Subject to consume from
-- `stream`: Stream name
+### NATS JetStream 配置
+- `url`: NATS 服务器 URL
+- `subject`: 要消费的主题
+- `stream`: 流名称
 
-### ClickHouse Configuration
-- `host`: ClickHouse server host
-- `port`: ClickHouse server port
-- `database`: Database name
-- `username`: Username for authentication
-- `password`: Password for authentication
-- `dialTimeout`: Connection timeout
-- `compress`: Enable compression
+### ClickHouse 配置
+- `host`: ClickHouse 服务器主机
+- `port`: ClickHouse 服务器端口
+- `database`: 数据库名称
+- `username`: 认证用户名
+- `password`: 认证密码
+- `dialTimeout`: 连接超时
+- `compress`: 启用压缩
 
-### Aggregation Configuration
-- `waitTime`: Time to wait before processing aggregated data
-- `threadSize`: Number of worker threads for aggregation
-- `waitQueue`: Size of the wait queue
-- `insertQueue`: Size of the insert queue
+### 聚合配置
+- `waitTime`: 处理聚合数据前等待的时间
+- `threadSize`: 聚合的工作线程数
+- `waitQueue`: 等待队列的大小
+- `insertQueue`: 插入队列的大小
 
-### Block Processing Configuration
-- `batchDataMaxRowCnt`: Maximum number of rows per batch
-- `batchDataMaxByteSize`: Maximum size of batch in bytes
-- `byteBufferFixedCacheSize`: Size of fixed buffer cache
-- `byteBufferDynamicCacheSize`: Size of dynamic buffer cache
-- `blockSize`: Size of data blocks
+### 块处理配置
+- `batchDataMaxRowCnt`: 每批的最大行数
+- `batchDataMaxByteSize`: 批的最大字节数
+- `byteBufferFixedCacheSize`: 固定缓冲区缓存大小
+- `byteBufferDynamicCacheSize`: 动态缓冲区缓存大小
+- `blockSize`: 数据块大小
 
-### System Configuration
-- `parseThreadSize`: Number of threads for parsing
-- `dataInsertThreadSize`: Number of threads for data insertion
-- `dataInsertQueueLength`: Length of data insertion queue
+### 系统配置
+- `parseThreadSize`: 解析线程数
+- `dataInsertThreadSize`: 数据插入线程数
+- `dataInsertQueueLength`: 数据插入队列长度
 
-## Building
+## 构建
 
 ```bash
 go build -o berry-rapids-go
 ```
 
-## Running
+## 运行
 
 ```bash
-# Use Kafka data source (default)
+# 使用 Kafka 数据源（默认）
 ./berry-rapids-go
 
-# Use NATS JetStream data source
+# 使用 NATS JetStream 数据源
 ./berry-rapids-go --data-source=nats
 
-# Specify HTTP management port
+# 指定 HTTP 管理端口
 ./berry-rapids-go --http-port=9090
 ```
 
-## Testing
+## 测试
 
 ```bash
 go test ./...

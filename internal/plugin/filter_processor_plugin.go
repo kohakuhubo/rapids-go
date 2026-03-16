@@ -1,7 +1,10 @@
 // filter_processor_plugin.go 是过滤处理器插件的实现
 package plugin
 
-import "strings"
+import (
+	"berry-rapids-go/internal/model"
+	"strings"
+)
 
 // FilterProcessorPlugin 是过滤处理器插件
 type FilterProcessorPlugin struct {
@@ -18,7 +21,7 @@ func NewFilterProcessorPlugin(config ProcessorPluginConfig) ProcessorPlugin {
 	if keyword, ok := config.Config["filterKeyword"].(string); ok {
 		filterKeyword = keyword
 	}
-	
+
 	return &FilterProcessorPlugin{
 		id:            config.ID,
 		config:        config,
@@ -59,34 +62,43 @@ func (fpp *FilterProcessorPlugin) Close() error {
 // Process 实现过滤处理逻辑
 func (fpp *FilterProcessorPlugin) Process(ctx *ProcessorContext) (*ProcessorResult, error) {
 	dataStr := string(ctx.Data)
-	
+
 	// 如果数据包含过滤关键字，则处理；否则丢弃
 	if fpp.filterKeyword == "" || strings.Contains(dataStr, fpp.filterKeyword) {
 		// 添加过滤标记
 		processedData := []byte("[FILTERED] " + dataStr)
-		
+
+		// 创建单行 FieldBatch
+		batchData := make(map[string][][]byte)
+		batchData["data"] = [][]byte{processedData}
+		batch := model.NewFieldBatch(batchData)
+
 		// 获取目标处理器ID
 		targetIDs := fpp.config.TargetProcessorIDs
 		if len(targetIDs) == 0 {
 			targetIDs = []string{} // 或者指定默认的目标处理器ID
 		}
-		
+
 		result := &ProcessorResult{
-			ProcessedData:      processedData,
+			ProcessedData:      batch,
 			ShouldPersist:      true,
 			TargetProcessorIDs: targetIDs,
 		}
-		
+
 		return result, nil
 	}
-	
+
 	// 如果数据不包含过滤关键字，返回空结果，不传递给其他处理器
+	// 创建单行 FieldBatch，包含原始数据
+	batchData := make(map[string][][]byte)
+	batchData["data"] = [][]byte{ctx.Data}
+	batch := model.NewFieldBatch(batchData)
+
 	result := &ProcessorResult{
-		ProcessedData:      ctx.Data, // 保持原始数据
-		ShouldPersist:      false,    // 不需要持久化
+		ProcessedData:      batch,      // 保持原始数据
+		ShouldPersist:      false,      // 不需要持久化
 		TargetProcessorIDs: []string{}, // 不传递给其他处理器
 	}
-	
 	return result, nil
 }
 

@@ -1,7 +1,10 @@
 // counter_processor_plugin.go 是计数器处理器插件的实现
 package plugin
 
-import "fmt"
+import (
+	"berry-rapids-go/internal/model"
+	"fmt"
+)
 
 // CounterProcessorPlugin 是计数器处理器插件
 type CounterProcessorPlugin struct {
@@ -51,22 +54,27 @@ func (cpp *CounterProcessorPlugin) Close() error {
 func (cpp *CounterProcessorPlugin) Process(ctx *ProcessorContext) (*ProcessorResult, error) {
 	// 增加计数器
 	cpp.count++
-	
+
 	// 在数据前添加计数信息
 	processedData := []byte(fmt.Sprintf("[COUNT:%d] %s", cpp.count, string(ctx.Data)))
-	
+
+	// 创建单行 FieldBatch
+	batchData := make(map[string][][]byte)
+	batchData["data"] = [][]byte{processedData}
+	batch := model.NewFieldBatch(batchData)
+
 	// 获取目标处理器ID
 	targetIDs := cpp.config.TargetProcessorIDs
 	if len(targetIDs) == 0 {
 		targetIDs = []string{} // 或者指定默认的目标处理器ID
 	}
-	
+
 	result := &ProcessorResult{
-		ProcessedData:      processedData,
+		ProcessedData:      batch,
 		ShouldPersist:      true,
 		TargetProcessorIDs: targetIDs,
 	}
-	
+
 	return result, nil
 }
 

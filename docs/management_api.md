@@ -1,18 +1,18 @@
-# Berry Rapids Go Management API
+# Berry Rapids Go 管理 API
 
-## Overview
+## 概述
 
-The management API provides HTTP endpoints for monitoring and controlling the Berry Rapids Go server.
+管理 API 提供用于监控和控制 Berry Rapids Go 服务器的 HTTP 端点。
 
-## Endpoints
+## 端点
 
-### Health Check
+### 健康检查
 ```
 GET /health
 ```
-Returns the health status of the server.
+返回服务器的健康状态。
 
-**Response:**
+**响应：**
 ```json
 {
   "status": "healthy",
@@ -20,13 +20,13 @@ Returns the health status of the server.
 }
 ```
 
-### Server Status
+### 服务器状态
 ```
 GET /status
 ```
-Returns detailed server status information.
+返回详细的服务器状态信息。
 
-**Response:**
+**响应：**
 ```json
 {
   "status": "running",
@@ -43,13 +43,13 @@ Returns detailed server status information.
 }
 ```
 
-### Metrics
+### 指标
 ```
 GET /metrics
 ```
-Returns system and application metrics.
+返回系统和应用程序指标。
 
-**Response:**
+**响应：**
 ```json
 {
   "timestamp": "2025-10-30T10:00:00Z",
@@ -67,13 +67,13 @@ Returns system and application metrics.
 }
 ```
 
-### Graceful Shutdown
+### 优雅关闭
 ```
 POST /shutdown
 ```
-Initiates graceful shutdown of the server.
+启动服务器的优雅关闭。
 
-**Response:**
+**响应：**
 ```json
 {
   "status": "shutdown initiated",
@@ -81,13 +81,13 @@ Initiates graceful shutdown of the server.
 }
 ```
 
-### Configuration
+### 配置
 ```
 GET /config
 ```
-Returns server configuration information.
+返回服务器配置信息。
 
-**Response:**
+**响应：**
 ```json
 {
   "config": {
@@ -97,29 +97,29 @@ Returns server configuration information.
 }
 ```
 
-## Usage
+## 使用方法
 
-Start the server with a custom HTTP port:
+使用自定义 HTTP 端口启动服务器：
 ```bash
 ./berry-rapids-go --http-port 9090
 ```
 
-Check server health:
+检查服务器健康状态：
 ```bash
 curl http://localhost:8080/health
 ```
 
-Get server status:
+获取服务器状态：
 ```bash
 curl http://localhost:8080/status
 ```
 
-View metrics:
+查看指标：
 ```bash
 curl http://localhost:8080/metrics
 ```
 
-Initiate graceful shutdown:
+启动优雅关闭：
 ```bash
 curl -X POST http://localhost:8080/shutdown
 ```

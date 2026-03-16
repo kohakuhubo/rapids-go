@@ -1,6 +1,8 @@
 // sample_processor_plugin.go 是示例处理器插件的实现
 package plugin
 
+import "berry-rapids-go/internal/model"
+
 // SampleProcessorPlugin 是一个示例处理器插件
 type SampleProcessorPlugin struct {
 	*BaseProcessor
@@ -48,20 +50,25 @@ func (spp *SampleProcessorPlugin) Process(ctx *ProcessorContext) (*ProcessorResu
 	// 示例处理逻辑：将数据转换为大写并添加前缀
 	dataStr := string(ctx.Data)
 	processedData := []byte("SAMPLE_PROCESSED: " + dataStr)
-	
+
+	// 创建单行 FieldBatch
+	batchData := make(map[string][][]byte)
+	batchData["data"] = [][]byte{processedData}
+	batch := model.NewFieldBatch(batchData)
+
 	// 获取目标处理器ID
 	targetIDs := spp.config.TargetProcessorIDs
 	if len(targetIDs) == 0 {
 		// 如果没有指定目标处理器，可以设置默认行为
 		targetIDs = []string{} // 或者指定默认的目标处理器ID
 	}
-	
+
 	result := &ProcessorResult{
-		ProcessedData:      processedData,
+		ProcessedData:      batch,
 		ShouldPersist:      true, // 示例中设置为需要持久化
 		TargetProcessorIDs: targetIDs,
 	}
-	
+
 	return result, nil
 }
 
