@@ -2,11 +2,11 @@
 package plugin
 
 import (
-	"context"
-	"sync"
-	"berry-rapids-go/internal/model"
 	"berry-rapids-go/internal/data/persistece"
+	"berry-rapids-go/internal/model"
+	"context"
 	"go.uber.org/zap"
+	"sync"
 )
 
 // AsyncPersistenceHandler 处理异步持久化操作
@@ -30,7 +30,7 @@ func NewAsyncPersistenceHandler(
 	workers int,
 ) *AsyncPersistenceHandler {
 	ctx, cancel := context.WithCancel(context.Background())
-	
+
 	handler := &AsyncPersistenceHandler{
 		persistenceHandler: persistenceHandler,
 		queue:              make(chan *model.BatchData, queueSize),
@@ -40,10 +40,10 @@ func NewAsyncPersistenceHandler(
 		logger:             logger,
 		closed:             false,
 	}
-	
+
 	// 启动工作线程
 	handler.startWorkers()
-	
+
 	return handler
 }
 
@@ -58,9 +58,9 @@ func (aph *AsyncPersistenceHandler) startWorkers() {
 // worker 工作线程函数
 func (aph *AsyncPersistenceHandler) worker(workerID int) {
 	defer aph.wg.Done()
-	
+
 	aph.logger.Debug("Persistence worker started", zap.Int("workerID", workerID))
-	
+
 	for {
 		select {
 		case <-aph.ctx.Done():
@@ -73,7 +73,7 @@ func (aph *AsyncPersistenceHandler) worker(workerID int) {
 				aph.logger.Debug("Persistence worker stopping due to queue closure", zap.Int("workerID", workerID))
 				return
 			}
-			
+
 			// 处理持久化
 			if err := aph.persistenceHandler.Handle(aph.ctx, batch); err != nil {
 				aph.logger.Error("Failed to persist batch", zap.Error(err), zap.Int64("startRowID", batch.StartRowID))
@@ -88,11 +88,11 @@ func (aph *AsyncPersistenceHandler) worker(workerID int) {
 func (aph *AsyncPersistenceHandler) Submit(batch *model.BatchData) error {
 	aph.mutex.RLock()
 	defer aph.mutex.RUnlock()
-	
+
 	if aph.closed {
 		return nil // 如果已关闭，直接返回，不处理数据
 	}
-	
+
 	// 使用非阻塞方式发送到队列
 	select {
 	case aph.queue <- batch:
@@ -113,16 +113,16 @@ func (aph *AsyncPersistenceHandler) Close() error {
 	}
 	aph.closed = true
 	aph.mutex.Unlock()
-	
+
 	// 取消上下文，停止所有工作线程
 	aph.cancel()
-	
+
 	// 关闭队列
 	close(aph.queue)
-	
+
 	// 等待所有工作线程完成
 	aph.wg.Wait()
-	
+
 	return nil
 }
 
@@ -130,13 +130,13 @@ func (aph *AsyncPersistenceHandler) Close() error {
 func (aph *AsyncPersistenceHandler) GetStats() map[string]interface{} {
 	aph.mutex.RLock()
 	defer aph.mutex.RUnlock()
-	
+
 	stats := aph.persistenceHandler.GetStats()
 	stats["queueLength"] = len(aph.queue)
 	stats["queueCapacity"] = cap(aph.queue)
 	stats["workers"] = aph.workers
 	stats["closed"] = aph.closed
-	
+
 	return stats
 }
 
@@ -156,7 +156,7 @@ type PersistencePlugin struct {
 // NewPersistencePlugin 创建持久化插件
 func NewPersistencePlugin(id string, asyncHandler BatchDataSubmitter) *PersistencePlugin {
 	base := NewBaseProcessor(id)
-	
+
 	return &PersistencePlugin{
 		BaseProcessor: base,
 		asyncHandler:  asyncHandler,
@@ -167,19 +167,27 @@ func NewPersistencePlugin(id string, asyncHandler BatchDataSubmitter) *Persisten
 func (pp *PersistencePlugin) Process(ctx *ProcessorContext) (*ProcessorResult, error) {
 	// 创建批数据并提交到异步持久化处理器
 	batch := model.NewBatchData(ctx.RowID, ctx.RowID, "plugin")
-	batch.Content = ctx.Data
+	// 创建 FieldBatch 对象
+	batchData := make(map[string][][]byte)
+	batchData["data"] = [][]byte{ctx.Data}
+	batch.Content = model.NewFieldBatch(batchData)
 	batch.SizeInBytes = int64(len(ctx.Data))
 	batch.NumberOfRows = 1
-	
+
 	// 异步提交，不等待结果
 	if err := pp.asyncHandler.Submit(batch); err != nil {
 		return nil, err
 	}
-	
+
 	// 返回结果，不传递给其他处理器
+	// 创建 FieldBatch 对象用于返回
+	resultBatchData := make(map[string][][]byte)
+	resultBatchData["data"] = [][]byte{ctx.Data}
+	resultBatch := model.NewFieldBatch(resultBatchData)
+
 	return &ProcessorResult{
-		ProcessedData:      ctx.Data,
-		ShouldPersist:      false, // 已经提交到持久化层
+		ProcessedData:      resultBatch,
+		ShouldPersist:      false,      // 已经提交到持久化层
 		TargetProcessorIDs: []string{}, // 不传递给其他处理器
 	}, nil
 }

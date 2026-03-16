@@ -5,26 +5,26 @@
 package data
 
 import (
+	"berry-rapids-go/internal/configuration"
+	"berry-rapids-go/internal/model"
 	"context"
+	"go.uber.org/zap"
 	"sync"
 	"time"
-	"berry-rapids-go/internal/model"
-	"berry-rapids-go/internal/configuration"
-	"go.uber.org/zap"
 )
 
 // BatchProcessor 处理数据批处理操作，在数据持久化之前进行批处理
 // 设计说明：该结构体实现了生产者-消费者模式，支持定时刷新和容量刷新
 type BatchProcessor struct {
-	config          *configuration.BlockConfig // 批处理配置
-	logger          *zap.Logger                // 日志记录器
-	batch           *model.BatchData           // 当前批处理数据
-	mutex           sync.Mutex                 // 互斥锁，保证线程安全
-	flushCallback   func(*model.BatchData) error // 刷新回调函数
-	flushTimer      *time.Timer                // 刷新定时器
-	flushInterval   time.Duration              // 刷新间隔
-	ctx             context.Context            // 上下文，用于控制goroutine生命周期
-	
+	config        *configuration.BlockConfig   // 批处理配置
+	logger        *zap.Logger                  // 日志记录器
+	batch         *model.BatchData             // 当前批处理数据
+	mutex         sync.Mutex                   // 互斥锁，保证线程安全
+	flushCallback func(*model.BatchData) error // 刷新回调函数
+	flushTimer    *time.Timer                  // 刷新定时器
+	flushInterval time.Duration                // 刷新间隔
+	ctx           context.Context              // 上下文，用于控制goroutine生命周期
+
 	// 管道字段，用于分离解析和持久化操作
 	pipelineChan    chan *model.BatchData // 管道通道
 	pipelineWorkers int                   // 管道工作线程数
@@ -35,12 +35,14 @@ type BatchProcessor struct {
 // NewBatchProcessor 创建新的批处理器实例
 // 设计原理：初始化批处理器配置和管道架构，启动持久化工作线程
 // 参数说明：
-//   ctx - 上下文，用于控制goroutine生命周期
-//   config - 批处理配置
-//   logger - 日志记录器
-//   flushInterval - 刷新间隔
-//   flushCallback - 刷新回调函数
-//   pipelineWorkers - 管道工作线程数
+//
+//	ctx - 上下文，用于控制goroutine生命周期
+//	config - 批处理配置
+//	logger - 日志记录器
+//	flushInterval - 刷新间隔
+//	flushCallback - 刷新回调函数
+//	pipelineWorkers - 管道工作线程数
+//
 // 返回值：BatchProcessor实例
 func NewBatchProcessor(
 	ctx context.Context,
@@ -52,18 +54,18 @@ func NewBatchProcessor(
 ) *BatchProcessor {
 	// 创建批处理器实例
 	bp := &BatchProcessor{
-		config:          config,                              // 批处理配置
-		logger:          logger,                              // 日志记录器
-		flushCallback:   flushCallback,                       // 刷新回调函数
-		flushInterval:   flushInterval,                       // 刷新间隔
-		ctx:             ctx,                                 // 上下文
+		config:          config,                                                            // 批处理配置
+		logger:          logger,                                                            // 日志记录器
+		flushCallback:   flushCallback,                                                     // 刷新回调函数
+		flushInterval:   flushInterval,                                                     // 刷新间隔
+		ctx:             ctx,                                                               // 上下文
 		pipelineChan:    make(chan *model.BatchData, config.GetByteBufferFixedCacheSize()), // 管道通道
-		pipelineWorkers: pipelineWorkers,                     // 管道工作线程数
+		pipelineWorkers: pipelineWorkers,                                                   // 管道工作线程数
 	}
-	
+
 	// 启动管道工作线程
 	bp.startPipelineWorkers()
-	
+
 	// 返回批处理器实例
 	return bp
 }
@@ -86,10 +88,10 @@ func (bp *BatchProcessor) startPipelineWorkers() {
 func (bp *BatchProcessor) persistenceWorker(workerID int) {
 	// 在函数结束时减少等待组计数
 	defer bp.pipelineWG.Done()
-	
+
 	// 记录工作线程启动日志
 	bp.logger.Debug("Persistence worker started", zap.Int("workerID", workerID))
-	
+
 	// 从管道通道中接收批数据并处理，同时监听上下文取消信号
 	for {
 		select {
@@ -103,7 +105,7 @@ func (bp *BatchProcessor) persistenceWorker(workerID int) {
 				bp.logger.Debug("Pipeline channel closed, persistence worker stopping", zap.Int("workerID", workerID))
 				return
 			}
-			
+
 			// 记录处理批数据的日志
 			bp.logger.Debug("Processing batch in persistence worker",
 				zap.Int("workerID", workerID),
@@ -111,17 +113,17 @@ func (bp *BatchProcessor) persistenceWorker(workerID int) {
 				zap.Int64("endRowID", batch.EndRowID),
 				zap.Int64("sizeInBytes", batch.SizeInBytes),
 				zap.Int64("numberOfRows", batch.NumberOfRows))
-			
+
 			// 调用刷新回调函数进行持久化
 			if err := bp.flushCallback(batch); err != nil {
 				// 如果持久化失败，记录错误日志
-				bp.logger.Error("Failed to flush batch in worker", 
+				bp.logger.Error("Failed to flush batch in worker",
 					zap.Int("workerID", workerID),
 					zap.Error(err))
 			}
 		}
 	}
-	
+
 	// 记录工作线程停止日志
 	bp.logger.Debug("Persistence worker stopped", zap.Int("workerID", workerID))
 }
@@ -144,14 +146,25 @@ func (bp *BatchProcessor) AddData(data []byte, rowID int64) error {
 
 	// 将数据追加到批处理中
 	if bp.batch.Content == nil {
-		bp.batch.Content = data
+		// 创建新的 FieldBatch
+		batchData := make(map[string][][]byte)
+		batchData["data"] = [][]byte{data}
+		bp.batch.Content = model.NewFieldBatch(batchData)
 	} else {
-		bp.batch.Content = append(bp.batch.Content, data...)
+		// 追加数据到现有的 FieldBatch
+		existingData := bp.batch.Content.GetData()
+		if dataSlice, exists := existingData["data"]; exists {
+			existingData["data"] = append(dataSlice, data)
+		} else {
+			existingData["data"] = [][]byte{data}
+		}
+		// 重新创建 FieldBatch 以更新统计信息
+		bp.batch.Content = model.NewFieldBatch(existingData)
 	}
 
 	// 更新批处理的大小和行数信息
-	bp.batch.SizeInBytes = int64(len(bp.batch.Content))
-	bp.batch.NumberOfRows++
+	bp.batch.SizeInBytes = bp.batch.Content.GetTotalSize()
+	bp.batch.NumberOfRows = int64(bp.batch.Content.GetRowCount())
 	bp.batch.EndRowID = rowID
 
 	// 检查批处理是否已满，如果已满则刷新
@@ -253,7 +266,7 @@ func (bp *BatchProcessor) Close() error {
 	}
 	// 标记管道已关闭
 	bp.pipelineClosed = true
-	
+
 	// 获取剩余的批处理数据
 	var remainingBatch *model.BatchData
 	if bp.batch != nil && !bp.batch.IsEmpty() {
@@ -261,7 +274,7 @@ func (bp *BatchProcessor) Close() error {
 	}
 	// 解锁
 	bp.mutex.Unlock()
-	
+
 	// 处理剩余的批处理数据
 	if remainingBatch != nil {
 		// 尝试将剩余批处理数据发送到管道通道
@@ -275,20 +288,20 @@ func (bp *BatchProcessor) Close() error {
 			}
 		}
 	}
-	
+
 	// 关闭管道通道
 	close(bp.pipelineChan)
-	
+
 	// 等待所有工作线程完成
 	bp.pipelineWG.Wait()
-	
+
 	// 再次加锁
 	bp.mutex.Lock()
 	// 停止刷新定时器
 	bp.stopFlushTimer()
 	// 解锁
 	bp.mutex.Unlock()
-	
+
 	// 返回nil表示关闭成功
 	return nil
 }

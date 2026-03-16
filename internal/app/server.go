@@ -233,7 +233,9 @@ func (s *Server) processDataLoop() {
 			}
 
 			// 尝试解析MessagePack数据
-			if parsedGetter, ok := entry.(interface{ GetParsedValue() (map[string]interface{}, error) }); ok {
+			if parsedGetter, ok := entry.(interface {
+				GetParsedValue() (map[string]interface{}, error)
+			}); ok {
 				if parsedData, err := parsedGetter.GetParsedValue(); err == nil {
 					// 成功解析MessagePack数据
 					s.logger.Debug("Successfully parsed MessagePack data", zap.Any("data", parsedData))
@@ -259,12 +261,17 @@ func (s *Server) processDataLoop() {
 			}
 
 			// 创建批数据对象用于聚合计算
+			// 创建 FieldBatch 对象
+			fieldBatchData := make(map[string][][]byte)
+			fieldBatchData["data"] = [][]byte{data}
+			fieldBatch := model.NewFieldBatch(fieldBatchData)
+
 			batchData := &model.BatchData{
 				StartRowID:   rowID,
 				EndRowID:     rowID,
 				SizeInBytes:  int64(len(data)),
 				NumberOfRows: 1,
-				Content:      data,
+				Content:      fieldBatch,
 				DataSourceID: s.config.DataSource, // 设置数据源ID
 			}
 
